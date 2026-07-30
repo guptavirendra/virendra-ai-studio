@@ -24,3 +24,32 @@ Start the app:
 ```bash
 uvicorn app.main:app --reload
 ```
+
+## Frontend dashboard
+
+A starter React dashboard is available in `frontend/`.
+
+Install dependencies:
+
+```bash
+cd frontend
+npm install
+```
+
+Run the dashboard:
+
+```bash
+npm run dev
+```
+
+The frontend currently uses a health endpoint at `/api/health`. In production, proxy the frontend to the FastAPI backend or add a simple reverse proxy.
+
+## Environment
+
+Create a `.env` file in the project root with:
+
+```bash
+DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/youtube_ai
+```
+
+The backend reads `DATABASE_URL` from the environment and falls back to the default URL shown above.

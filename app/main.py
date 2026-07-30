@@ -56,3 +56,8 @@ def publish(item_id: int, db: Session = Depends(get_db)):
         return item
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/api/health")
+def health_check():
+    return {"status": "ok", "service": "virendra-ai-studio"}
