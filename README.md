@@ -46,10 +46,49 @@ The frontend currently uses a health endpoint at `/api/health`. In production, p
 
 ## Environment
 
-Create a `.env` file in the project root with:
+Create a `.env` file in the project root with the following values:
 
 ```bash
 DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/youtube_ai
+OPENAI_API_KEY=your-openai-api-key
+YOUTUBE_CLIENT_SECRETS=client_secrets.json
+YOUTUBE_TOKEN_JSON=youtube_token.json
+YOUTUBE_CATEGORY_ID=25
+YOUTUBE_PRIVACY_STATUS=private
 ```
 
-The backend reads `DATABASE_URL` from the environment and falls back to the default URL shown above.
+Copy `.env.example` to `.env` and update the values.
+
+## OpenAI integration
+
+The backend can generate Hindi scripts and SEO metadata using OpenAI. Use the endpoint:
+
+- `POST /content/{item_id}/generate-ai`
+
+This populates `script`, `seo_title`, `seo_description`, and `hashtags` for the content item.
+
+## YouTube integration
+
+You need a Google OAuth client secrets file in the project root named by `YOUTUBE_CLIENT_SECRETS`.
+
+To generate credentials, run:
+
+```bash
+python -m app.youtube_auth
+```
+
+Then upload a video with:
+
+- `POST /content/{item_id}/upload-youtube`
+
+Payload example:
+
+```json
+{
+  "file_path": "/path/to/video.mp4",
+  "privacy_status": "private",
+  "tags": ["government update", "Aadhaar", "EPFO"]
+}
+```
+
+The YouTube client will upload the file and return YouTube's upload response.

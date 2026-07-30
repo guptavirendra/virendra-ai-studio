@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
 
 from app.models import ContentItem
+from app.openai_client import generate_script, generate_seo
+from app.youtube_client import upload_video
 
 
 def build_script(topic: str) -> str:
@@ -50,6 +52,46 @@ def create_content_job(db: Session, topic: str, source: str, confidence: int, co
     db.commit()
     db.refresh(item)
     return item
+
+
+def generate_ai_content(db: Session, item_id: int):
+    item = db.query(ContentItem).filter(ContentItem.id == item_id).first()
+    if not item:
+        raise ValueError("Content not found")
+
+    item.script = generate_script(item.topic)
+    seo_data = generate_seo(item.topic, item.script)
+    item.seo_title = seo_data.get("title")
+    item.seo_description = seo_data.get("description")
+    item.hashtags = seo_data.get("hashtags")
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+def upload_youtube_video(db: Session, item_id: int, file_path: str, privacy_status: str = "private", tags=None):
+    item = db.query(ContentItem).filter(ContentItem.id == item_id).first()
+    if not item:
+        raise ValueError("Content not found")
+
+    if not item.seo_title or not item.seo_description:
+        raise ValueError("SEO metadata is required before uploading")
+
+    response = upload_video(
+        file_path=file_path,
+        title=item.seo_title,
+        description=item.seo_description,
+        tags=tags or [item.topic, "government update", "online service"],
+        privacy_status=privacy_status,
+    )
+
+    item.video_path = file_path
+    item.status = "uploaded"
+    if privacy_status == "public":
+        item.published = True
+    db.commit()
+    db.refresh(item)
+    return response
 
 
 def approve_content(db: Session, item_id: int):

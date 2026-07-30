@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel
 
 
@@ -10,6 +10,12 @@ class ContentCreate(BaseModel):
     estimated_views: str = "medium"
 
 
+class YouTubeUploadPayload(BaseModel):
+    file_path: str
+    privacy_status: str = "private"
+    tags: Optional[List[str]] = None
+
+
 class ContentOut(BaseModel):
     id: int
     topic: str
@@ -18,6 +24,9 @@ class ContentOut(BaseModel):
     competition: str
     estimated_views: str
     script: Optional[str] = None
+    seo_title: Optional[str] = None
+    seo_description: Optional[str] = None
+    hashtags: Optional[str] = None
     status: str
     approved: bool
     published: bool
