@@ -1,14 +1,27 @@
+"""FastAPI backend for Virendra AI Studio content workflows."""
+
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.models import Base, ContentItem, engine
-from app.schemas import ContentCreate, ContentOut, YouTubeUploadPayload
+from app.schemas import (
+    AnalyticsCreate,
+    ContentCreate,
+    ContentOut,
+    LearningSignalCreate,
+    YouTubeUploadPayload,
+)
 from app.services import (
     approve_content,
     create_content_job,
     generate_ai_content,
     publish_content,
     upload_youtube_video,
+    add_analytics,
+    add_learning_signal,
+    get_content_review_queue,
+    get_content_analytics,
+    get_content_learning_signals,
 )
 
 Base.metadata.create_all(bind=engine)
@@ -17,6 +30,7 @@ app = FastAPI(title="Virendra AI Studio")
 
 
 def get_db():
+    """Provide a database session for request handling."""
     SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
     db = SessionLocal()
     try:
@@ -66,6 +80,60 @@ def upload_youtube(item_id: int, payload: YouTubeUploadPayload, db: Session = De
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+@app.post("/content/{item_id}/analytics")
+def submit_analytics(item_id: int, payload: AnalyticsCreate, db: Session = Depends(get_db)):
+    try:
+        analytics = add_analytics(
+            db=db,
+            item_id=item_id,
+            views=payload.views,
+            ctr=payload.ctr,
+            retention=payload.retention,
+            subscribers=payload.subscribers,
+            rpm=payload.rpm,
+            top_keywords=payload.top_keywords,
+        )
+        return analytics
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+@app.post("/content/{item_id}/learning")
+def submit_learning_signal(item_id: int, payload: LearningSignalCreate, db: Session = Depends(get_db)):
+    try:
+        learning = add_learning_signal(
+            db=db,
+            item_id=item_id,
+            title_style=payload.title_style,
+            thumbnail_style=payload.thumbnail_style,
+            best_upload_time=payload.best_upload_time,
+            topic_category=payload.topic_category,
+            ctr=payload.ctr,
+            retention=payload.retention,
+            rpm=payload.rpm,
+        )
+        return learning
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+@app.get("/content/review")
+def content_review_queue(db: Session = Depends(get_db)):
+    items = get_content_review_queue(db)
+    return items
+
+@app.get("/content/{item_id}/analytics")
+def get_analytics(item_id: int, db: Session = Depends(get_db)):
+    analytics = get_content_analytics(db, item_id)
+    if analytics is None:
+        raise HTTPException(status_code=404, detail="Analytics not found")
+    return analytics
+
+@app.get("/content/{item_id}/learning")
+def get_learning_signals(item_id: int, db: Session = Depends(get_db)):
+    learning = get_content_learning_signals(db, item_id)
+    if learning is None:
+        raise HTTPException(status_code=404, detail="Learning signals not found")
+    return learning
 
 
 @app.get("/content/{item_id}", response_model=ContentOut)

@@ -30,3 +30,22 @@ class ContentOut(BaseModel):
     status: str
     approved: bool
     published: bool
+
+
+class AnalyticsCreate(BaseModel):
+    views: int = 0
+    ctr: float = 0.0
+    retention: float = 0.0
+    subscribers: int = 0
+    rpm: float = 0.0
+    top_keywords: Optional[str] = None
+
+
+class LearningSignalCreate(BaseModel):
+    title_style: Optional[str] = None
+    thumbnail_style: Optional[str] = None
+    best_upload_time: Optional[str] = None
+    topic_category: Optional[str] = None
+    ctr: float = 0.0
+    retention: float = 0.0
+    rpm: float = 0.0

@@ -92,3 +92,16 @@ Payload example:
 ```
 
 The YouTube client will upload the file and return YouTube's upload response.
+
+## Project Documentation
+
+Additional documentation is available in the `docs/` folder:
+
+- `docs/README.md`
+- `docs/vision-and-product-overview.md`
+- `docs/agent-workflow.md`
+- `docs/implementation-roadmap.md`
+- `docs/system-architecture.md`
+- `docs/api-spec.md`
+- `docs/automation-scheduler.md`
+- `docs/government-alert-automation.md`

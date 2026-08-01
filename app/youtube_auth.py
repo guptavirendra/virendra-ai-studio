@@ -1,3 +1,5 @@
+"""Helper to create and save Google OAuth credentials for YouTube."""
+
 import os
 
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -11,6 +13,7 @@ SCOPES = [
 
 
 def create_youtube_credentials():
+    """Run the OAuth flow to create YouTube API credentials."""
     if not os.path.exists(settings.YOUTUBE_CLIENT_SECRETS):
         raise FileNotFoundError(
             f"Missing YouTube client secrets file: {settings.YOUTUBE_CLIENT_SECRETS}"

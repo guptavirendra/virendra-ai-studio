@@ -30,3 +30,16 @@ CREATE TABLE IF NOT EXISTS analytics (
     top_keywords TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS learning_signals (
+    id SERIAL PRIMARY KEY,
+    content_id INT REFERENCES content_items(id) ON DELETE CASCADE,
+    title_style TEXT,
+    thumbnail_style TEXT,
+    best_upload_time TEXT,
+    topic_category TEXT,
+    ctr NUMERIC(5,2) DEFAULT 0,
+    retention NUMERIC(5,2) DEFAULT 0,
+    rpm NUMERIC(10,2) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

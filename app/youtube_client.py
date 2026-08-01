@@ -1,3 +1,5 @@
+"""Google YouTube client helpers for uploading videos."""
+
 import os
 from typing import List
 
@@ -14,6 +16,7 @@ SCOPES = [
 
 
 def get_youtube_service():
+    """Create an authenticated YouTube service object for API calls."""
     if not os.path.exists(settings.YOUTUBE_TOKEN_JSON):
         raise FileNotFoundError(
             f"YouTube token not found. Generate credentials with the OAuth flow and save to {settings.YOUTUBE_TOKEN_JSON}."
@@ -30,6 +33,7 @@ def upload_video(
     tags: List[str] | None = None,
     privacy_status: str = None,
 ) -> dict:
+    """Upload a video file to YouTube and return the upload response."""
     if privacy_status is None:
         privacy_status = settings.YOUTUBE_PRIVACY_STATUS
 

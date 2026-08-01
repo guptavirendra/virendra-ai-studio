@@ -1,11 +1,15 @@
+"""Business logic services for content creation, AI generation, publishing, analytics, and learning."""
+
 from sqlalchemy.orm import Session
 
 from app.models import ContentItem
+from app.models import Analytics, LearningSignal
 from app.openai_client import generate_script, generate_seo
 from app.youtube_client import upload_video
 
 
 def build_script(topic: str) -> str:
+    """Build a simple placeholder Hindi script for the given topic."""
     return f"""
 Hook: {topic} पर आज का सबसे ज़रूरी अपडेट
 
@@ -30,6 +34,7 @@ CTA:
 
 
 def build_seo(topic: str):
+    """Build a simple placeholder SEO metadata payload for the given topic."""
     return {
         "title": f"{topic} | आसान समझ में",
         "description": f"{topic} पर आसान और उपयोगी जानकारी।",
@@ -39,6 +44,7 @@ def build_seo(topic: str):
 
 
 def create_content_job(db: Session, topic: str, source: str, confidence: int, competition: str, estimated_views: str):
+    """Create a new draft content item in the database."""
     item = ContentItem(
         topic=topic,
         source=source,
@@ -55,6 +61,7 @@ def create_content_job(db: Session, topic: str, source: str, confidence: int, co
 
 
 def generate_ai_content(db: Session, item_id: int):
+    """Generate script and SEO metadata for an existing content item."""
     item = db.query(ContentItem).filter(ContentItem.id == item_id).first()
     if not item:
         raise ValueError("Content not found")
@@ -70,6 +77,7 @@ def generate_ai_content(db: Session, item_id: int):
 
 
 def upload_youtube_video(db: Session, item_id: int, file_path: str, privacy_status: str = "private", tags=None):
+    """Upload a prepared video to YouTube and update the content item state."""
     item = db.query(ContentItem).filter(ContentItem.id == item_id).first()
     if not item:
         raise ValueError("Content not found")
@@ -94,7 +102,60 @@ def upload_youtube_video(db: Session, item_id: int, file_path: str, privacy_stat
     return response
 
 
+def add_analytics(db: Session, item_id: int, views: int, ctr: float, retention: float, subscribers: int, rpm: float, top_keywords: str | None = None):
+    """Record analytics metrics for a content item."""
+    item = db.query(ContentItem).filter(ContentItem.id == item_id).first()
+    if not item:
+        raise ValueError("Content not found")
+
+    analytics = Analytics(
+        content_id=item.id,
+        views=views,
+        ctr=ctr,
+        retention=retention,
+        subscribers=subscribers,
+        rpm=rpm,
+        top_keywords=top_keywords,
+    )
+    db.add(analytics)
+    db.commit()
+    db.refresh(analytics)
+    return analytics
+
+
+def add_learning_signal(
+    db: Session,
+    item_id: int,
+    title_style: str | None = None,
+    thumbnail_style: str | None = None,
+    best_upload_time: str | None = None,
+    topic_category: str | None = None,
+    ctr: float = 0.0,
+    retention: float = 0.0,
+    rpm: float = 0.0,
+):
+    item = db.query(ContentItem).filter(ContentItem.id == item_id).first()
+    if not item:
+        raise ValueError("Content not found")
+
+    learning_signal = LearningSignal(
+        content_id=item.id,
+        title_style=title_style,
+        thumbnail_style=thumbnail_style,
+        best_upload_time=best_upload_time,
+        topic_category=topic_category,
+        ctr=ctr,
+        retention=retention,
+        rpm=rpm,
+    )
+    db.add(learning_signal)
+    db.commit()
+    db.refresh(learning_signal)
+    return learning_signal
+
+
 def approve_content(db: Session, item_id: int):
+    """Mark a content item as approved for publication."""
     item = db.query(ContentItem).filter(ContentItem.id == item_id).first()
     if not item:
         raise ValueError("Content not found")
@@ -105,6 +166,7 @@ def approve_content(db: Session, item_id: int):
 
 
 def publish_content(db: Session, item_id: int):
+    """Publish an approved content item."""
     item = db.query(ContentItem).filter(ContentItem.id == item_id).first()
     if not item:
         raise ValueError("Content not found")
@@ -114,3 +176,18 @@ def publish_content(db: Session, item_id: int):
     item.status = "published"
     db.commit()
     return item
+
+
+def get_content_review_queue(db: Session):
+    """Return content items that are pending review."""
+    return db.query(ContentItem).filter(ContentItem.approved == False).order_by(ContentItem.created_at.desc()).all()
+
+
+def get_content_analytics(db: Session, item_id: int):
+    """Fetch analytics history for a content item."""
+    return db.query(Analytics).filter(Analytics.content_id == item_id).order_by(Analytics.created_at.desc()).all()
+
+
+def get_content_learning_signals(db: Session, item_id: int):
+    """Fetch learning signal history for a content item."""
+    return db.query(LearningSignal).filter(LearningSignal.content_id == item_id).order_by(LearningSignal.created_at.desc()).all()

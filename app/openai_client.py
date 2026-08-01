@@ -1,3 +1,5 @@
+"""OpenAI integration helpers for script and SEO generation."""
+
 import openai
 
 from app.config import settings
@@ -6,6 +8,7 @@ openai.api_key = settings.OPENAI_API_KEY
 
 
 def generate_script(topic: str) -> str:
+    """Generate a Hindi YouTube script for a government services topic."""
     if not settings.OPENAI_API_KEY:
         raise RuntimeError("OPENAI_API_KEY is not configured")
 
@@ -29,6 +32,7 @@ def generate_script(topic: str) -> str:
 
 
 def generate_seo(topic: str, script: str) -> dict:
+    """Generate SEO metadata such as title, description, hashtags, and tags."""
     if not settings.OPENAI_API_KEY:
         raise RuntimeError("OPENAI_API_KEY is not configured")
 

@@ -30,6 +30,7 @@ class ContentItem(Base):
     created_at = Column(DateTime, nullable=False, server_default="NOW")
 
     analytics = relationship("Analytics", back_populates="content_item", cascade="all, delete-orphan")
+    learning_signals = relationship("LearningSignal", back_populates="content_item", cascade="all, delete-orphan")
 
 
 class Analytics(Base):
@@ -46,3 +47,20 @@ class Analytics(Base):
     created_at = Column(DateTime, nullable=False, server_default="NOW")
 
     content_item = relationship("ContentItem", back_populates="analytics")
+
+
+class LearningSignal(Base):
+    __tablename__ = "learning_signals"
+
+    id = Column(Integer, primary_key=True, index=True)
+    content_id = Column(Integer, ForeignKey("content_items.id"))
+    title_style = Column(Text, nullable=True)
+    thumbnail_style = Column(Text, nullable=True)
+    best_upload_time = Column(Text, nullable=True)
+    topic_category = Column(Text, nullable=True)
+    ctr = Column(Numeric(5, 2), default=0)
+    retention = Column(Numeric(5, 2), default=0)
+    rpm = Column(Numeric(10, 2), default=0)
+    created_at = Column(DateTime, nullable=False, server_default="NOW")
+
+    content_item = relationship("ContentItem", back_populates="learning_signals")
