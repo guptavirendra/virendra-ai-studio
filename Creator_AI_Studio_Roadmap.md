@@ -18,6 +18,9 @@ This file is now the working project plan for the repository. It should be updat
 - [x] A starter frontend dashboard is present.
 - [ ] Docker container setup is not yet finalized.
 - [ ] A full prompt manager and multi-agent orchestrator are not yet implemented.
+- [x] Basic orchestration layer and endpoint implemented (app/orchestrator.py, POST /content/orchestrate)
+- [x] Regression and API tests added for orchestrator (tests/test_orchestrator.py, tests/test_orchestrator_api.py)
+- [x] Tests configured to run with in-memory SQLite during CI/local runs
 - [ ] Video factory features such as voice, images, subtitles, and MP4 generation are still pending.
 - [ ] Publishing to Instagram, Facebook, and Telegram is still pending.
 - [ ] Analytics and AI suggestions are still pending.
