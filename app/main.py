@@ -1,6 +1,7 @@
 """FastAPI backend for Virendra AI Studio content workflows."""
 
 from fastapi import Depends, FastAPI, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.models import Base, ContentItem, engine
@@ -24,9 +25,15 @@ from app.services import (
     get_content_learning_signals,
 )
 
+from app.orchestrator import orchestrate_content
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Virendra AI Studio")
+
+
+class OrchestratePayload(BaseModel):
+    topic: str
 
 
 def get_db():
@@ -165,3 +172,14 @@ def publish(item_id: int, db: Session = Depends(get_db)):
 @app.get("/api/health")
 def health_check():
     return {"status": "ok", "service": "virendra-ai-studio"}
+
+
+@app.post("/content/orchestrate")
+def orchestrate_endpoint(payload: OrchestratePayload):
+    try:
+        result = orchestrate_content(payload.topic)
+        return result
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
