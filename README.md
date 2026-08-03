@@ -25,6 +25,13 @@ Start the app:
 uvicorn app.main:app --reload
 ```
 
+Run with Docker (local development):
+
+```bash
+docker compose up --build
+# then visit http://localhost:8000/docs
+```
+
 ## Frontend dashboard
 
 A starter React dashboard is available in `frontend/`.
