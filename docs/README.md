@@ -7,6 +7,7 @@
 - [Product Overview](./vision-and-product-overview.md)
 - [Agent Workflow](./agent-workflow.md)
 - [Implementation Roadmap](./implementation-roadmap.md)
+- [Creator AI Studio Roadmap](../Creator_AI_Studio_Roadmap.md)
 - [Government Alert Automation Use Case](./government-alert-automation.md)
 
 ## Summary
