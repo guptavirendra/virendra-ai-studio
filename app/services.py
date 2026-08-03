@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.models import ContentItem
 from app.models import Analytics, LearningSignal
+from app.fallbacks import build_script, build_seo
 from app.openai_client import generate_script, generate_seo
 from app.youtube_client import upload_video
 
@@ -51,13 +52,18 @@ def create_content_job(db: Session, topic: str, source: str, confidence: int, co
         confidence=confidence,
         competition=competition,
         estimated_views=estimated_views,
-        script=build_script(topic),
         status="draft",
     )
     db.add(item)
     db.commit()
     db.refresh(item)
     return item
+
+
+def create_content_job_with_ai(db: Session, topic: str, source: str, confidence: int, competition: str, estimated_views: str):
+    """Create a new content item and immediately generate AI script and SEO metadata."""
+    item = create_content_job(db, topic, source, confidence, competition, estimated_views)
+    return generate_ai_content(db, item.id)
 
 
 def generate_ai_content(db: Session, item_id: int):

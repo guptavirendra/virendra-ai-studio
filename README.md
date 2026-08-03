@@ -32,6 +32,12 @@ docker compose up --build
 # then visit http://localhost:8000/docs
 ```
 
+New API endpoints:
+
+- `POST /content/generate` — create a draft content item
+- `POST /content/create-with-ai` — create a draft item and generate AI script + SEO metadata immediately
+- `POST /content/orchestrate` — generate an orchestration payload without persisting it
+
 ## Frontend dashboard
 
 A starter React dashboard is available in `frontend/`.

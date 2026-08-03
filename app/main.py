@@ -15,6 +15,7 @@ from app.schemas import (
 from app.services import (
     approve_content,
     create_content_job,
+    create_content_job_with_ai,
     generate_ai_content,
     publish_content,
     upload_youtube_video,
@@ -57,6 +58,24 @@ def generate_content(payload: ContentCreate, db: Session = Depends(get_db)):
         estimated_views=payload.estimated_views,
     )
     return item
+
+
+@app.post("/content/create-with-ai", response_model=ContentOut)
+def create_content_with_ai(payload: ContentCreate, db: Session = Depends(get_db)):
+    try:
+        item = create_content_job_with_ai(
+            db=db,
+            topic=payload.topic,
+            source=payload.source,
+            confidence=payload.confidence,
+            competition=payload.competition,
+            estimated_views=payload.estimated_views,
+        )
+        return item
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @app.post("/content/{item_id}/generate-ai", response_model=ContentOut)

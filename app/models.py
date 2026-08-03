@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Numeric, String, Text, create_engine
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Numeric, String, Text, create_engine, func
 from sqlalchemy.orm import declarative_base, relationship
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg://postgres:postgres@localhost:5432/youtube_ai")
@@ -27,7 +27,7 @@ class ContentItem(Base):
     publish_target = Column(String, nullable=True)
     approved = Column(Boolean, default=False)
     published = Column(Boolean, default=False)
-    created_at = Column(DateTime, nullable=False, server_default="NOW")
+    created_at = Column(DateTime, nullable=False, server_default=func.now())
 
     analytics = relationship("Analytics", back_populates="content_item", cascade="all, delete-orphan")
     learning_signals = relationship("LearningSignal", back_populates="content_item", cascade="all, delete-orphan")
@@ -44,7 +44,7 @@ class Analytics(Base):
     subscribers = Column(Integer, default=0)
     rpm = Column(Numeric(10, 2), default=0)
     top_keywords = Column(Text, nullable=True)
-    created_at = Column(DateTime, nullable=False, server_default="NOW")
+    created_at = Column(DateTime, nullable=False, server_default=func.now())
 
     content_item = relationship("ContentItem", back_populates="analytics")
 
@@ -61,6 +61,6 @@ class LearningSignal(Base):
     ctr = Column(Numeric(5, 2), default=0)
     retention = Column(Numeric(5, 2), default=0)
     rpm = Column(Numeric(10, 2), default=0)
-    created_at = Column(DateTime, nullable=False, server_default="NOW")
+    created_at = Column(DateTime, nullable=False, server_default=func.now())
 
     content_item = relationship("ContentItem", back_populates="learning_signals")
