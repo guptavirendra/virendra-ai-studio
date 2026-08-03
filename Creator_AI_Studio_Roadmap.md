@@ -102,6 +102,6 @@ Agents
 ## Next actions for the next session
 
 1. Implement the orchestrator layer and separate agents.
-2. Add Docker support for local and deployment workflows.
+2. Add Docker support for local and deployment workflows. (DONE)
 3. Expand publishing support beyond YouTube.
 4. Update this file after each completed milestone.
