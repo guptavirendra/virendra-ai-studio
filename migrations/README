@@ -12,3 +12,10 @@ should be added as new, explicit revision files and must not edit the baseline.
 
 Inspect the current revision with:
     alembic current
+
+Check whether the live schema matches the SQLAlchemy models with:
+    alembic check
+
+Run this check after upgrading an existing database. If Alembic reports drift,
+review the differences and add an explicit migration for the existing schema;
+the baseline intentionally does not rewrite pre-existing tables or columns.

@@ -23,6 +23,20 @@ def run_alembic(database_url: str, *arguments: str) -> None:
     )
 
 
+def check_alembic(database_url: str) -> subprocess.CompletedProcess[str]:
+    env = os.environ.copy()
+    env["DATABASE_URL"] = database_url
+    env["SESSION_SECRET_KEY"] = "migration-test-session-key-that-is-long-enough"
+    return subprocess.run(
+        [sys.executable, "-m", "alembic", "-c", str(ROOT / "alembic.ini"), "check"],
+        cwd=ROOT,
+        env=env,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+
 def test_baseline_migration_creates_fresh_schema_and_is_repeatable(tmp_path):
     database_url = f"sqlite:///{tmp_path / 'fresh.db'}"
 
@@ -80,3 +94,33 @@ def test_baseline_migration_adopts_existing_tables_without_losing_rows(tmp_path)
     assert row == (9, "Saved content", "legacy")
     assert user == (7, "legacy-admin", 0)
     assert "users" in inspect(engine).get_table_names()
+
+
+def test_schema_check_reports_drift_in_an_adopted_legacy_database(tmp_path):
+    database_url = f"sqlite:///{tmp_path / 'drifted.db'}"
+    engine = create_engine(database_url)
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "CREATE TABLE content_items "
+                "(id INTEGER PRIMARY KEY, topic TEXT NOT NULL, source TEXT NOT NULL)"
+            )
+        )
+        connection.execute(
+            text(
+                "INSERT INTO content_items (id, topic, source) "
+                "VALUES (12, 'Legacy item', 'legacy')"
+            )
+        )
+
+    run_alembic(database_url, "upgrade", "head")
+
+    check = check_alembic(database_url)
+    assert check.returncode != 0
+    assert "content_items" in check.stdout + check.stderr
+
+    with engine.connect() as connection:
+        row = connection.execute(
+            text("SELECT id, topic, source FROM content_items WHERE id = 12")
+        ).one()
+    assert row == (12, "Legacy item", "legacy")

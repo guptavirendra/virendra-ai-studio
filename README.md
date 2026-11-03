@@ -46,6 +46,11 @@ docker compose up --build
 
 Existing installations can run the same migration command against their current `DATABASE_URL`;
 the baseline migration creates only missing tables and preserves existing rows.
+After upgrading an existing database, run `alembic check` to detect schema drift
+between that database and the SQLAlchemy models. The baseline intentionally
+does not rewrite pre-existing tables or columns; review reported differences
+and add an explicit migration before relying on the application against a
+drifted legacy schema.
 
 Continuous integration:
 

@@ -119,5 +119,5 @@ Agents
 1. [x] Harden production secrets and deployment configuration for Azure Container Apps, including secure frontend serving (`docs/azure-container-apps.md`, `infra/azure/container-apps.bicep`).
 2. [x] Add persistent login rate limiting (10 attempts per username per 15 minutes; successful login resets the counter).
 3. [x] Add account lifecycle controls (admin password reset, account disable/reactivate, and session revocation).
-4. Add migration checks for schema drift on existing database installations.
+4. [x] Add migration checks for schema drift on existing database installations (`alembic check` after adoption; tested drift reporting).
 5. Update this file after each completed milestone.
