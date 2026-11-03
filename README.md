@@ -75,6 +75,58 @@ Create a content draft in the dashboard, then choose **Render MP4** from Recent 
 
 The default script generator uses a built-in local template when `OPENAI_API_KEY` is unset. To upload the rendered file to YouTube, configure the Google OAuth client secrets and token described below; the dashboard's upload action submits videos privately.
 
+## Daily Bollywood news auto-publishing
+
+The backend can collect fresh reports from RSS feeds published by Hindustan
+Times, The Times of India, and The Indian Express, create an
+original Hindi digest, render it locally, and upload it publicly once a day.
+The scheduler is **off by default** and does not change the dashboard's private
+manual-upload behavior.
+
+To enable it on your own computer:
+
+1. Install the app's Python dependencies in a local virtual environment and
+   configure Google Cloud OAuth. Enable **YouTube Data API v3**, create an
+   OAuth **Desktop app** client, and save its downloaded JSON in the project
+   root as `client_secrets.json`. If Google's consent screen is in testing mode,
+   add the Google account that owns the channel as a test user.
+2. With the virtual environment active, run `python -m app.youtube_auth` from
+   the project root and sign in to the Google account/channel you intend to
+   publish to. The OAuth token is saved locally as `youtube_token.json`; do not
+   send or commit either credentials file. Check the printed channel name and
+   ID before enabling the scheduler. Google's OAuth testing-mode refresh tokens
+   can expire after seven days; review the consent-screen publication and
+   verification requirements for a long-running setup.
+3. Set `OPENAI_API_KEY` in `.env`, then set:
+
+   ```dotenv
+   DAILY_NEWS_AUTOPUBLISH_ENABLED=true
+   DAILY_NEWS_PUBLISH_TIME=20:00
+   DAILY_NEWS_TIMEZONE=Asia/Kolkata
+   ```
+
+4. Apply migrations with `docker compose run --rm backend alembic upgrade head`,
+   then start the stack with `docker compose up --build`. On macOS, you can keep
+   the computer awake while running the stack with
+   `caffeinate -dimsu docker compose up --build`.
+
+The app must be running with internet access at the scheduled time. It checks
+for at least three fresh Bollywood-related items from at least two publisher
+feeds; if the reporting is insufficient, it skips publication for that date.
+Each date is recorded before rendering/uploading to prevent accidental
+duplicate uploads. Failed or ambiguous uploads are not retried automatically;
+check the YouTube Studio channel and the backend logs before taking action.
+Use one backend instance only; running multiple backend processes can cause
+competing schedules. Existing public-upload API quota and Google OAuth app
+verification restrictions still apply, so verify the Google Cloud project
+before relying on the schedule.
+
+The video paraphrases reporting and links the publisher articles in its
+description. RSS availability and reuse terms are controlled by each publisher;
+check those terms for your channel and its monetization status. OpenAI usage
+may incur charges. The scheduler does not publish old reports to catch up if
+the computer was off at 20:00.
+
 ## Frontend dashboard
 
 A starter React dashboard is available in `frontend/`.
@@ -109,6 +161,9 @@ YOUTUBE_CLIENT_SECRETS=client_secrets.json
 YOUTUBE_TOKEN_JSON=youtube_token.json
 YOUTUBE_CATEGORY_ID=25
 YOUTUBE_PRIVACY_STATUS=private
+DAILY_NEWS_AUTOPUBLISH_ENABLED=false
+DAILY_NEWS_PUBLISH_TIME=20:00
+DAILY_NEWS_TIMEZONE=Asia/Kolkata
 INSTAGRAM_ACCESS_TOKEN=your-meta-access-token
 INSTAGRAM_USER_ID=your-instagram-professional-account-id
 INSTAGRAM_GRAPH_API_VERSION=v22.0

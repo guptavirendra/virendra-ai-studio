@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     YOUTUBE_TOKEN_JSON: str = "youtube_token.json"
     YOUTUBE_CATEGORY_ID: str = "25"
     YOUTUBE_PRIVACY_STATUS: str = "private"
+    DAILY_NEWS_AUTOPUBLISH_ENABLED: bool = False
+    DAILY_NEWS_PUBLISH_TIME: str = "20:00"
+    DAILY_NEWS_TIMEZONE: str = "Asia/Kolkata"
     INSTAGRAM_ACCESS_TOKEN: str | None = None
     INSTAGRAM_USER_ID: str | None = None
     INSTAGRAM_GRAPH_API_VERSION: str = "v22.0"

@@ -3,6 +3,7 @@
 import os
 
 from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
 
 from app.config import settings
 
@@ -24,8 +25,17 @@ def create_youtube_credentials():
 
     with open(settings.YOUTUBE_TOKEN_JSON, "w", encoding="utf-8") as token_file:
         token_file.write(creds.to_json())
+    os.chmod(settings.YOUTUBE_TOKEN_JSON, 0o600)
 
+    youtube = build("youtube", "v3", credentials=creds)
+    channels = youtube.channels().list(part="snippet", mine=True).execute()
+    items = channels.get("items", [])
+    if not items:
+        raise RuntimeError("The authorized Google account does not expose a YouTube channel")
     print(f"YouTube credentials saved to {settings.YOUTUBE_TOKEN_JSON}")
+    print("Authorized YouTube channel(s):")
+    for channel in items:
+        print(f"- {channel['snippet']['title']} (channel ID: {channel['id']})")
 
 
 if __name__ == "__main__":

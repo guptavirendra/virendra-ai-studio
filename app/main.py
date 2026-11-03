@@ -1,5 +1,6 @@
 """FastAPI backend for Virendra AI Studio content workflows."""
 
+from contextlib import asynccontextmanager
 from pathlib import Path
 import secrets
 
@@ -22,6 +23,7 @@ from app.auth import (
     verify_password,
 )
 from app.config import settings
+from app.daily_news import start_daily_news_scheduler
 from app.media_access import verify_media_token
 from app.media_storage import (
     is_blob_reference,
@@ -69,7 +71,19 @@ if len(settings.SESSION_SECRET_KEY) < 32:
     raise RuntimeError("SESSION_SECRET_KEY must contain at least 32 characters")
 bootstrap_admin(settings.BOOTSTRAP_ADMIN_USERNAME, settings.BOOTSTRAP_ADMIN_PASSWORD)
 
-app = FastAPI(title="Virendra AI Studio")
+
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    application.state.daily_news_scheduler = start_daily_news_scheduler()
+    try:
+        yield
+    finally:
+        scheduler = getattr(application.state, "daily_news_scheduler", None)
+        if scheduler:
+            scheduler.shutdown(wait=True)
+
+
+app = FastAPI(title="Virendra AI Studio", lifespan=lifespan)
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.SESSION_SECRET_KEY,
@@ -78,6 +92,7 @@ app.add_middleware(
     same_site="strict",
     https_only=settings.SESSION_COOKIE_SECURE,
 )
+
 
 AUTH_REQUIRED = [Depends(require_user)]
 
