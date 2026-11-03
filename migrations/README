@@ -1,0 +1,14 @@
+Schema changes are managed with Alembic.
+
+Apply migrations before starting the API:
+    alembic upgrade head
+
+For Docker Compose:
+    docker compose run --rm backend alembic upgrade head
+
+The initial baseline creates missing tables and adopts existing installations
+without dropping or replacing their application data. Future schema changes
+should be added as new, explicit revision files and must not edit the baseline.
+
+Inspect the current revision with:
+    alembic current

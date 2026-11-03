@@ -1,0 +1,12 @@
+node_modules
+dist
+.env
+.env.*
+*.local
+*.pem
+*.key
+client_secrets.json
+client_secret*.json
+youtube_token.json
+*.bicepparam
+deployment.parameters*.json

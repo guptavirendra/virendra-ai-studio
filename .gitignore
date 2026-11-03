@@ -4,5 +4,14 @@ __pycache__/
 *.sqlite3
 .venv/
 .env
+client_secrets.json
+client_secret*.json
+youtube_token.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.bicepparam
+deployment.parameters*.json
 frontend/node_modules/
 uvicorn.log

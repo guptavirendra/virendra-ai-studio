@@ -4,7 +4,7 @@
 
 Build an AI-powered content operating system for YouTube and Instagram.
 
-## Status snapshot (updated 2026-08-03)
+## Status snapshot (updated 2026-11-03)
 
 This file is now the working project plan for the repository. It should be updated whenever a milestone is completed so the next session can resume from the latest state.
 
@@ -16,16 +16,25 @@ This file is now the working project plan for the repository. It should be updat
 - [x] YouTube upload integration is wired through the backend.
 - [x] PostgreSQL schema and data models are defined.
 - [x] A starter frontend dashboard is present.
-- [ ] Docker container setup is not yet finalized.
-- [ ] A full prompt manager and multi-agent orchestrator are not yet implemented.
+- [x] Local Docker Compose setup is available for backend, frontend, and PostgreSQL.
+- [x] Prompt manager and multi-agent orchestration components are implemented.
 - [x] Basic orchestration layer and endpoint implemented (app/orchestrator.py, POST /content/orchestrate)
 - [x] Prompt manager added for reusable AI prompts (app/prompt_manager.py)
 - [x] Content creation route with AI generation added (POST /content/create-with-ai)
 - [x] Regression and API tests added for orchestrator and AI content creation
 - [x] Tests configured to run with SQLite during CI/local runs
-- [ ] Video factory features such as voice, images, subtitles, and MP4 generation are still pending.
-- [ ] Publishing to Instagram, Facebook, and Telegram is still pending.
-- [ ] Analytics and AI suggestions are still pending.
+- [x] YouTube upload uses the OAuth API and requires approved content with a rendered video.
+- [x] Instagram Reels publishing is wired through Meta Graph API and uses approved rendered videos.
+- [x] Facebook Page video publishing is wired through Meta Graph API and uses approved rendered videos.
+- [x] Telegram bot video publishing is wired through the Bot API and uses approved rendered videos.
+- [x] Video factory scaffold added for voiceover planning, SRT subtitle generation, and render metadata.
+- [x] AI image generation prompt pipeline is now in place.
+- [x] Analytics and AI suggestions are now in place.
+- [x] Dashboard content list, summary, and creation flow are live for local use.
+- [x] Local DB startup now falls back to SQLite when no DATABASE_URL is configured.
+- [x] Local full-stack Docker workflow now includes the frontend dashboard and backend API.
+- [x] Multi-user authentication with admin/member roles, signed sessions, and CSRF protection is in place.
+- [x] Alembic baseline migration creates missing tables and adopts existing databases without dropping data.
 
 ### Current implementation references
 
@@ -50,32 +59,36 @@ This file is now the working project plan for the repository. It should be updat
 - [x] FastAPI
 - [x] React
 - [x] PostgreSQL
-- [ ] Docker
-- [ ] Prompt Manager
+- [x] Docker (local development stack)
+- [x] Prompt Manager
 
 ### Phase 1.2 -- AI Orchestrator
 
-- [ ] Topic Agent
-- [ ] Script Agent
-- [ ] SEO Agent
-- [ ] Thumbnail Agent
-- [ ] Quality Agent
+- [x] Topic Agent
+- [x] Script Agent
+- [x] SEO Agent
+- [x] Thumbnail Agent
+- [x] Quality Agent
 
 ### Phase 2 -- Video Factory
 
-- [ ] AI Voice
-- [ ] AI Images
-- [ ] Subtitle Generator
-- [ ] MP4 Output
+- [x] AI Voice planning scaffold
+- [x] AI Images
+- [x] Subtitle Generator
+- [x] MP4 Output
 
 ### Phase 3 -- Publishing
 
-- [x] YouTube
-- [ ] Instagram
-- [ ] Facebook
-- [ ] Telegram
+- [x] YouTube upload workflow (OAuth; real account upload still requires credentials)
+- [x] Instagram Reels publishing workflow (requires Meta credentials and public HTTPS media URL)
+- [x] Facebook Page video publishing workflow (requires Page credentials and public HTTPS media URL)
+- [x] Telegram video publishing workflow (requires bot credentials and public HTTPS media URL)
 
 ### Phase 4 -- Analytics
+
+### Phase 5 -- Local deployment
+
+- [x] Docker stack for backend and frontend is available for local development
 
 - [ ] CTR
 - [ ] Watch Time
@@ -103,7 +116,8 @@ Agents
 
 ## Next actions for the next session
 
-1. Implement the orchestrator layer and separate agents.
-2. Add Docker support for local and deployment workflows. (DONE)
-3. Expand publishing support beyond YouTube.
-4. Update this file after each completed milestone.
+1. [x] Harden production secrets and deployment configuration for Azure Container Apps, including secure frontend serving (`docs/azure-container-apps.md`, `infra/azure/container-apps.bicep`).
+2. [x] Add persistent login rate limiting (10 attempts per username per 15 minutes; successful login resets the counter).
+3. [x] Add account lifecycle controls (admin password reset, account disable/reactivate, and session revocation).
+4. Add migration checks for schema drift on existing database installations.
+5. Update this file after each completed milestone.

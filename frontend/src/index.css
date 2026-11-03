@@ -68,3 +68,160 @@ ul {
 li {
   margin-bottom: 8px;
 }
+
+.content-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.content-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.content-form input,
+.content-form select,
+.content-form button {
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  padding: 10px 12px;
+  font: inherit;
+}
+
+.content-form input:focus,
+.content-form select:focus {
+  outline: 2px solid #94a3b8;
+  outline-offset: 1px;
+}
+
+.content-form button {
+  margin-top: 8px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.content-form button:disabled,
+.action-item button:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+.action-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.action-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.action-item strong,
+.action-item span {
+  display: block;
+}
+
+.action-item span {
+  color: #64748b;
+  font-size: 0.82rem;
+  margin-top: 4px;
+}
+
+.button-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.action-item button {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.action-item button.secondary {
+  background: #0f766e;
+}
+
+.account-list {
+  list-style: none;
+  padding: 0;
+}
+
+.account-item {
+  padding: 14px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.account-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.account-heading span {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.account-controls,
+.account-controls form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.account-controls input {
+  min-width: 220px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+}
+
+.account-controls button {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.account-controls button.secondary {
+  background: #0f766e;
+}
+
+.download-link {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #0f766e;
+  border-radius: 8px;
+  padding: 7px 10px;
+  color: #0f766e;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.error {
+  color: #b91c1c;
+  font-size: 0.92rem;
+  font-weight: 600;
+}

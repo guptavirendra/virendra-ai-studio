@@ -1,5 +1,5 @@
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ContentCreate(BaseModel):
@@ -16,7 +16,14 @@ class YouTubeUploadPayload(BaseModel):
     tags: Optional[List[str]] = None
 
 
+class PublishPayload(BaseModel):
+    platform: Optional[str] = None
+    platforms: Optional[List[str]] = None
+
+
 class ContentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     topic: str
     source: str
@@ -27,9 +34,15 @@ class ContentOut(BaseModel):
     seo_title: Optional[str] = None
     seo_description: Optional[str] = None
     hashtags: Optional[str] = None
+    video_path: Optional[str] = None
     status: str
     approved: bool
     published: bool
+    publish_target: Optional[str] = None
+
+
+class PublishResultOut(ContentOut):
+    provider_status: Optional[dict] = None
 
 
 class AnalyticsCreate(BaseModel):

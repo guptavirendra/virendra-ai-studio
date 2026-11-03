@@ -1,3 +1,21 @@
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(64) NOT NULL UNIQUE,
+    password_hash VARCHAR(256) NOT NULL,
+    role VARCHAR(16) NOT NULL DEFAULT 'member',
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    session_version INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS login_rate_limits (
+    key_hash VARCHAR(64) PRIMARY KEY,
+    attempts INT NOT NULL,
+    window_started_at TIMESTAMP NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_login_rate_limits_window_started_at
+    ON login_rate_limits (window_started_at);
+
 CREATE TABLE IF NOT EXISTS content_items (
     id SERIAL PRIMARY KEY,
     topic TEXT NOT NULL,

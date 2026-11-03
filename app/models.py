@@ -1,9 +1,16 @@
 import os
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Numeric, String, Text, create_engine, func
 from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.pool import StaticPool
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg://postgres:postgres@localhost:5432/youtube_ai")
-engine = create_engine(DATABASE_URL)
+DATABASE_URL = os.getenv("DATABASE_URL") or "sqlite:///./youtube_ai.db"
+engine_kwargs = {}
+if DATABASE_URL.startswith("sqlite"):
+    engine_kwargs["connect_args"] = {"check_same_thread": False}
+    if DATABASE_URL == "sqlite:///:memory:":
+        engine_kwargs["poolclass"] = StaticPool
+
+engine = create_engine(DATABASE_URL, **engine_kwargs)
 Base = declarative_base()
 
 
@@ -64,3 +71,23 @@ class LearningSignal(Base):
     created_at = Column(DateTime, nullable=False, server_default=func.now())
 
     content_item = relationship("ContentItem", back_populates="learning_signals")
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(64), nullable=False, unique=True, index=True)
+    password_hash = Column(String(256), nullable=False)
+    role = Column(String(16), nullable=False, default="member")
+    is_active = Column(Boolean, nullable=False, default=True)
+    session_version = Column(Integer, nullable=False, default=0, server_default="0")
+    created_at = Column(DateTime, nullable=False, server_default=func.now())
+
+
+class LoginRateLimit(Base):
+    __tablename__ = "login_rate_limits"
+
+    key_hash = Column(String(64), primary_key=True)
+    attempts = Column(Integer, nullable=False)
+    window_started_at = Column(DateTime, nullable=False, index=True)

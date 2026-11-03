@@ -1,12 +1,32 @@
 """Business logic services for content creation, AI generation, publishing, analytics, and learning."""
 
+from pathlib import Path
+
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.models import ContentItem
 from app.models import Analytics, LearningSignal
+from app.media_access import create_media_token
 from app.fallbacks import build_script, build_seo
 from app.openai_client import generate_script, generate_seo
+from app.publishers import (
+    publish_facebook_video,
+    publish_instagram_reel,
+    publish_telegram_video,
+)
 from app.youtube_client import upload_video
+from app.video_factory import render_mp4_video
+
+
+def _public_video_url(item_id: int) -> str:
+    if not settings.PUBLIC_MEDIA_BASE_URL:
+        raise RuntimeError("Set PUBLIC_MEDIA_BASE_URL to an externally reachable HTTPS backend URL")
+    media_base_url = settings.PUBLIC_MEDIA_BASE_URL.rstrip("/")
+    if not media_base_url.startswith("https://"):
+        raise RuntimeError("PUBLIC_MEDIA_BASE_URL must use HTTPS")
+    token = create_media_token(item_id)
+    return f"{media_base_url}/content/{item_id}/video?media_token={token}"
 
 
 def build_script(topic: str) -> str:
@@ -82,27 +102,55 @@ def generate_ai_content(db: Session, item_id: int):
     return item
 
 
+def render_content_video(db: Session, item_id: int):
+    """Render a saved script into a local MP4 and attach it to the content item."""
+    item = db.query(ContentItem).filter(ContentItem.id == item_id).first()
+    if not item:
+        raise ValueError("Content not found")
+    if not item.script:
+        raise ValueError("Generate a script before rendering the video")
+
+    render = render_mp4_video(
+        topic=item.topic,
+        description=item.script,
+        output_name=f"content-{item.id}-{__import__('uuid').uuid4().hex}.mp4",
+    )
+    item.video_path = render["output_path"]
+    db.commit()
+    db.refresh(item)
+    return item
+
+
 def upload_youtube_video(db: Session, item_id: int, file_path: str, privacy_status: str = "private", tags=None):
     """Upload a prepared video to YouTube and update the content item state."""
     item = db.query(ContentItem).filter(ContentItem.id == item_id).first()
     if not item:
         raise ValueError("Content not found")
+    if not item.approved:
+        raise ValueError("Content must be approved before upload")
 
     if not item.seo_title or not item.seo_description:
         raise ValueError("SEO metadata is required before uploading")
 
+    stored_path = Path(item.video_path).resolve() if item.video_path else None
+    requested_path = Path(file_path).resolve()
+    if stored_path is None or requested_path != stored_path:
+        raise ValueError("file_path must match the rendered video for this content item")
+    if not stored_path.is_file():
+        raise FileNotFoundError("Rendered video file not found")
+
     response = upload_video(
-        file_path=file_path,
+        file_path=str(stored_path),
         title=item.seo_title,
         description=item.seo_description,
         tags=tags or [item.topic, "government update", "online service"],
         privacy_status=privacy_status,
     )
 
-    item.video_path = file_path
+    item.video_path = str(stored_path)
     item.status = "uploaded"
-    if privacy_status == "public":
-        item.published = True
+    uploaded_privacy = response.get("status", {}).get("privacyStatus", privacy_status)
+    item.published = uploaded_privacy == "public"
     db.commit()
     db.refresh(item)
     return response
@@ -171,22 +219,142 @@ def approve_content(db: Session, item_id: int):
     return item
 
 
-def publish_content(db: Session, item_id: int):
-    """Publish an approved content item."""
+def normalize_publish_targets(platform: str | None = None, platforms: list[str] | None = None) -> str | None:
+    """Normalize one or more social publishing targets into a comma-separated string."""
+    targets = []
+    if platform:
+        targets.append(platform)
+    if platforms:
+        targets.extend(platforms)
+
+    cleaned = []
+    for target in targets:
+        value = str(target).strip().lower()
+        if value and value not in cleaned:
+            cleaned.append(value)
+
+    if not cleaned:
+        return None
+    return ",".join(cleaned)
+
+
+def publish_content(db: Session, item_id: int, platform: str | None = None, platforms: list[str] | None = None):
+    """Publish an approved content item to a platform such as YouTube, Instagram, Facebook, or Telegram."""
     item = db.query(ContentItem).filter(ContentItem.id == item_id).first()
     if not item:
         raise ValueError("Content not found")
     if not item.approved:
         raise ValueError("Content must be approved before publish")
-    item.published = True
-    item.status = "published"
-    db.commit()
-    return item
+
+    target = normalize_publish_targets(platform=platform, platforms=platforms)
+    if target:
+        item.publish_target = target
+    elif not item.publish_target:
+        item.publish_target = "youtube"
+
+    first_target = item.publish_target.split(",")[0].strip() if item.publish_target else "youtube"
+    if first_target == "youtube":
+        if not item.video_path:
+            raise ValueError("Render a video before uploading to YouTube")
+        tags = [tag.lstrip("#") for tag in (item.hashtags or "").split() if tag.startswith("#")]
+        response = upload_youtube_video(
+            db=db,
+            item_id=item.id,
+            file_path=item.video_path,
+            privacy_status=settings.YOUTUBE_PRIVACY_STATUS,
+            tags=tags or None,
+        )
+        item = db.query(ContentItem).filter(ContentItem.id == item_id).first()
+        item.provider_status = {
+            "platform": "youtube",
+            "status": "uploaded",
+            "external_id": response.get("id"),
+            "privacy_status": response.get("status", {}).get(
+                "privacyStatus", settings.YOUTUBE_PRIVACY_STATUS
+            ),
+        }
+        db.commit()
+        db.refresh(item)
+        return item
+
+    if first_target == "instagram":
+        if not item.video_path:
+            raise ValueError("Render a video before publishing to Instagram")
+        if not Path(item.video_path).is_file():
+            raise FileNotFoundError("Rendered video file not found")
+        caption = "\n\n".join(
+            part for part in (item.seo_title or item.topic, item.seo_description, item.hashtags) if part
+        )
+        item.provider_status = publish_instagram_reel(
+            video_url=_public_video_url(item.id),
+            caption=caption,
+        )
+        item.published = True
+        item.status = "published"
+        db.commit()
+        db.refresh(item)
+        return item
+
+    if first_target == "facebook":
+        if not item.video_path:
+            raise ValueError("Render a video before publishing to Facebook")
+        if not Path(item.video_path).is_file():
+            raise FileNotFoundError("Rendered video file not found")
+        description = "\n\n".join(
+            part for part in (item.seo_description or item.script, item.hashtags) if part
+        )
+        item.provider_status = publish_facebook_video(
+            video_url=_public_video_url(item.id),
+            title=item.seo_title or item.topic,
+            description=description,
+        )
+        item.published = True
+        item.status = "published"
+        db.commit()
+        db.refresh(item)
+        return item
+
+    if first_target == "telegram":
+        if not item.video_path:
+            raise ValueError("Render a video before publishing to Telegram")
+        if not Path(item.video_path).is_file():
+            raise FileNotFoundError("Rendered video file not found")
+        caption = "\n\n".join(
+            part for part in (item.seo_title or item.topic, item.seo_description, item.hashtags) if part
+        )
+        item.provider_status = publish_telegram_video(
+            video_url=_public_video_url(item.id),
+            caption=caption,
+        )
+        item.published = True
+        item.status = "published"
+        db.commit()
+        db.refresh(item)
+        return item
+
+    raise ValueError(f"Unsupported publishing platform: {first_target}")
 
 
 def get_content_review_queue(db: Session):
     """Return content items that are pending review."""
     return db.query(ContentItem).filter(ContentItem.approved == False).order_by(ContentItem.created_at.desc()).all()
+
+
+def list_content_items(db: Session, limit: int = 20):
+    """Return the most recent content items for the dashboard."""
+    return db.query(ContentItem).order_by(ContentItem.created_at.desc()).limit(limit).all()
+
+
+def get_content_summary(db: Session):
+    """Return a summary of the current content pipeline state for dashboard widgets."""
+    items = db.query(ContentItem).all()
+    return {
+        "total": len(items),
+        "draft": sum(1 for item in items if item.status == "draft"),
+        "approved": sum(1 for item in items if item.approved),
+        "published": sum(1 for item in items if item.published),
+        "review_queue": sum(1 for item in items if not item.approved and item.status != "published"),
+    }
 
 
 def get_content_analytics(db: Session, item_id: int):
