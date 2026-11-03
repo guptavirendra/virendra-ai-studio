@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     TELEGRAM_BOT_TOKEN: str | None = None
     TELEGRAM_CHAT_ID: str | None = None
     PUBLIC_MEDIA_BASE_URL: str | None = None
+    AZURE_STORAGE_ACCOUNT_URL: str | None = None
+    AZURE_STORAGE_CONTAINER: str | None = None
 
     class Config:
         env_file = ".env"

@@ -1,12 +1,22 @@
 """Business logic services for content creation, AI generation, publishing, analytics, and learning."""
 
 from pathlib import Path
+from uuid import uuid4
 
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.models import ContentItem
 from app.models import Analytics, LearningSignal
+from app.media_storage import (
+    delete_media,
+    is_blob_reference,
+    is_managed_local_media,
+    local_media_file,
+    media_exists,
+    subtitle_reference,
+    upload_media_file,
+)
 from app.media_access import create_media_token
 from app.fallbacks import build_script, build_seo
 from app.openai_client import generate_script, generate_seo
@@ -103,7 +113,7 @@ def generate_ai_content(db: Session, item_id: int):
 
 
 def render_content_video(db: Session, item_id: int):
-    """Render a saved script into a local MP4 and attach it to the content item."""
+    """Render a saved script and persist media in the configured storage backend."""
     item = db.query(ContentItem).filter(ContentItem.id == item_id).first()
     if not item:
         raise ValueError("Content not found")
@@ -113,10 +123,36 @@ def render_content_video(db: Session, item_id: int):
     render = render_mp4_video(
         topic=item.topic,
         description=item.script,
-        output_name=f"content-{item.id}-{__import__('uuid').uuid4().hex}.mp4",
+        output_name=f"content-{item.id}-{uuid4().hex}.mp4",
     )
-    item.video_path = render["output_path"]
-    db.commit()
+    previous_video_path = item.video_path
+    video_path = upload_media_file(render["output_path"])
+    try:
+        upload_media_file(render["subtitle_path"])
+    except Exception:
+        delete_media(video_path)
+        raise
+    if is_blob_reference(video_path):
+        Path(render["output_path"]).unlink(missing_ok=True)
+        Path(render["subtitle_path"]).unlink(missing_ok=True)
+    item.video_path = video_path
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        delete_media(video_path)
+        delete_media(subtitle_reference(video_path))
+        raise
+    if (
+        previous_video_path
+        and previous_video_path != video_path
+        and (
+            is_blob_reference(previous_video_path)
+            or is_managed_local_media(previous_video_path)
+        )
+    ):
+        delete_media(previous_video_path)
+        delete_media(subtitle_reference(previous_video_path))
     db.refresh(item)
     return item
 
@@ -132,22 +168,31 @@ def upload_youtube_video(db: Session, item_id: int, file_path: str, privacy_stat
     if not item.seo_title or not item.seo_description:
         raise ValueError("SEO metadata is required before uploading")
 
-    stored_path = Path(item.video_path).resolve() if item.video_path else None
-    requested_path = Path(file_path).resolve()
-    if stored_path is None or requested_path != stored_path:
+    stored_path = item.video_path
+    requested_path = (
+        file_path
+        if is_blob_reference(stored_path or "")
+        else str(Path(file_path).resolve())
+    )
+    expected_path = (
+        stored_path
+        if is_blob_reference(stored_path or "")
+        else str(Path(stored_path).resolve()) if stored_path else None
+    )
+    if expected_path is None or requested_path != expected_path:
         raise ValueError("file_path must match the rendered video for this content item")
-    if not stored_path.is_file():
+    if not media_exists(stored_path):
         raise FileNotFoundError("Rendered video file not found")
 
-    response = upload_video(
-        file_path=str(stored_path),
-        title=item.seo_title,
-        description=item.seo_description,
-        tags=tags or [item.topic, "government update", "online service"],
-        privacy_status=privacy_status,
-    )
+    with local_media_file(stored_path) as local_path:
+        response = upload_video(
+            file_path=str(local_path),
+            title=item.seo_title,
+            description=item.seo_description,
+            tags=tags or [item.topic, "government update", "online service"],
+            privacy_status=privacy_status,
+        )
 
-    item.video_path = str(stored_path)
     item.status = "uploaded"
     uploaded_privacy = response.get("status", {}).get("privacyStatus", privacy_status)
     item.published = uploaded_privacy == "public"
@@ -280,7 +325,7 @@ def publish_content(db: Session, item_id: int, platform: str | None = None, plat
     if first_target == "instagram":
         if not item.video_path:
             raise ValueError("Render a video before publishing to Instagram")
-        if not Path(item.video_path).is_file():
+        if not media_exists(item.video_path):
             raise FileNotFoundError("Rendered video file not found")
         caption = "\n\n".join(
             part for part in (item.seo_title or item.topic, item.seo_description, item.hashtags) if part
@@ -298,7 +343,7 @@ def publish_content(db: Session, item_id: int, platform: str | None = None, plat
     if first_target == "facebook":
         if not item.video_path:
             raise ValueError("Render a video before publishing to Facebook")
-        if not Path(item.video_path).is_file():
+        if not media_exists(item.video_path):
             raise FileNotFoundError("Rendered video file not found")
         description = "\n\n".join(
             part for part in (item.seo_description or item.script, item.hashtags) if part
@@ -317,7 +362,7 @@ def publish_content(db: Session, item_id: int, platform: str | None = None, plat
     if first_target == "telegram":
         if not item.video_path:
             raise ValueError("Render a video before publishing to Telegram")
-        if not Path(item.video_path).is_file():
+        if not media_exists(item.video_path):
             raise FileNotFoundError("Rendered video file not found")
         caption = "\n\n".join(
             part for part in (item.seo_title or item.topic, item.seo_description, item.hashtags) if part

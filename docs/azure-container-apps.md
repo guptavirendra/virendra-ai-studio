@@ -10,6 +10,9 @@ and `frontend/Dockerfile` remain development-only and are not changed.
 - An Azure resource group, Container Apps managed environment, Azure Container
   Registry, Key Vault, and PostgreSQL database already exist. This configuration
   deliberately does not provision them.
+- An Azure Storage account with a private Blob container already exists. The
+  app uses its system-assigned managed identity and does not expose public blob
+  access or storage account keys.
 - The Container Apps environment permits external ingress. ACA terminates TLS at
   its ingress; the Container App rejects insecure HTTP (`allowInsecure: false`).
   For a custom domain, configure its DNS and certificate on the Container Apps
@@ -47,8 +50,10 @@ files from their respective build contexts. Publish both images to the existing
 registry.
 
 Use the image reference parameters `backendImage`, `frontendImage`, and
-`registryServer` in the Bicep deployment. Do not use the development frontend
-image produced by `frontend/Dockerfile`.
+`registryServer` in the Bicep deployment. Set `azureStorageAccountUrl` to the
+existing account's HTTPS Blob endpoint and `azureStorageContainer` to its
+private container name. Do not use the development frontend image produced by
+`frontend/Dockerfile`.
 
 ## Secrets and configuration
 
@@ -113,9 +118,22 @@ does not start against an unmigrated schema.
 3. Set `deployApplication=true` in the untracked parameter file and deploy the
    template again. Grant the app's managed identity `AcrPull` on the registry.
    Wait for both container probes and the latest revision to become healthy.
-4. Open the ACA HTTPS FQDN and verify `/api/health`, login, and the secure session
-   cookie. Configure a custom domain/certificate and `PUBLIC_MEDIA_BASE_URL`
-   separately if required for publishing integrations.
+4. Grant the app's managed identity **Storage Blob Data Contributor** on the
+   storage account (or dedicated media container). Retrieve its principal ID
+   with `az containerapp identity show`, then assign the built-in role:
+
+   ```sh
+   az role assignment create \
+     --assignee-object-id <app-managed-identity-principal-id> \
+     --assignee-principal-type ServicePrincipal \
+     --role "Storage Blob Data Contributor" \
+     --scope <storage-account-or-container-resource-id>
+   ```
+
+5. Open the ACA HTTPS FQDN and verify `/api/health`, login, a rendered-video
+   upload/download, and the secure session cookie. Configure a custom
+   domain/certificate and `PUBLIC_MEDIA_BASE_URL` separately if required for
+   publishing integrations.
 
 The migration job executes `alembic upgrade head` from the backend image and
 uses the same secure database/session parameters. It has no scheduled trigger and
@@ -127,6 +145,14 @@ rows.
 
 - The Bicep app has HTTPS-only external ingress, one active revision, bounded
   replica count, explicit CPU/memory, and frontend/backend HTTP health probes.
+- Rendered MP4 and SRT files are stored in the private Blob container. The API
+  streams authorized downloads and short-lived signed media fetches from Blob
+  Storage; YouTube uploads download the blob to a temporary file. The local
+  filesystem remains the default when Azure storage settings are unset.
+- `AZURE_STORAGE_ACCOUNT_URL` and `AZURE_STORAGE_CONTAINER` are configured by
+  the Bicep template. The app identity needs Blob Data Contributor permissions
+  before media rendering works; validate role propagation before the first
+  render. No storage keys or public container access are used.
 - The frontend image can be built locally without changing Compose:
   `docker build -f frontend/Dockerfile.production -t <local-test-tag> frontend`.
 - The configuration assumes the PostgreSQL endpoint is reachable from the ACA

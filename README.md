@@ -23,6 +23,12 @@ Create the PostgreSQL database, then apply the schema:
 alembic upgrade head
 ```
 
+For local development, rendered media is stored under
+`app/generated/videos/`. Azure deployments can instead configure
+`AZURE_STORAGE_ACCOUNT_URL` and `AZURE_STORAGE_CONTAINER`; the backend then
+stores MP4/SRT artifacts in a private Blob container using its managed identity.
+Leave both settings unset to use local disk.
+
 Before starting for the first time, copy `.env.example` to `.env`, generate a
 session key, and set the bootstrap admin username/password. The app refuses to
 start without a valid session key or when the database has no users and no
@@ -110,6 +116,8 @@ FACEBOOK_PAGE_ACCESS_TOKEN=
 FACEBOOK_PAGE_ID=
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_CHAT_ID=
+AZURE_STORAGE_ACCOUNT_URL=
+AZURE_STORAGE_CONTAINER=
 PUBLIC_MEDIA_BASE_URL=https://your-public-api-domain.example
 ```
 

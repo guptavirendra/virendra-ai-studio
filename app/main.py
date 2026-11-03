@@ -4,7 +4,7 @@ from pathlib import Path
 import secrets
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session, sessionmaker
 from starlette.middleware.sessions import SessionMiddleware
@@ -23,6 +23,13 @@ from app.auth import (
 )
 from app.config import settings
 from app.media_access import verify_media_token
+from app.media_storage import (
+    is_blob_reference,
+    iter_media_chunks,
+    media_exists,
+    read_media_bytes,
+    subtitle_reference,
+)
 from app.models import ContentItem, User, engine
 from app.schemas import (
     AnalyticsCreate,
@@ -281,17 +288,33 @@ def download_video(
     if not (media_token and verify_media_token(media_token, item_id)):
         require_user(request, db)
     item = db.query(ContentItem).filter(ContentItem.id == item_id).first()
-    if not item or not item.video_path or not Path(item.video_path).is_file():
+    if not item or not item.video_path or not media_exists(item.video_path):
         raise HTTPException(status_code=404, detail="Rendered video not found")
-    return FileResponse(item.video_path, media_type="video/mp4", filename=Path(item.video_path).name)
+    if is_blob_reference(item.video_path):
+        return StreamingResponse(
+            iter_media_chunks(item.video_path),
+            media_type="video/mp4",
+            headers={"Content-Disposition": f'attachment; filename="content-{item.id}.mp4"'},
+        )
+    return FileResponse(
+        item.video_path,
+        media_type="video/mp4",
+        filename=Path(item.video_path).name,
+    )
 
 
 @app.get("/content/{item_id}/subtitles", dependencies=AUTH_REQUIRED)
 def download_subtitles(item_id: int, db: Session = Depends(get_db)):
     item = db.query(ContentItem).filter(ContentItem.id == item_id).first()
-    subtitle_path = Path(item.video_path).with_suffix(".srt") if item and item.video_path else None
-    if not subtitle_path or not subtitle_path.is_file():
+    subtitle_path = subtitle_reference(item.video_path) if item and item.video_path else None
+    if not subtitle_path or not media_exists(subtitle_path):
         raise HTTPException(status_code=404, detail="Rendered subtitles not found")
+    if is_blob_reference(subtitle_path):
+        return Response(
+            content=read_media_bytes(subtitle_path),
+            media_type="application/x-subrip",
+            headers={"Content-Disposition": f'attachment; filename="content-{item.id}.srt"'},
+        )
     return FileResponse(subtitle_path, media_type="application/x-subrip", filename=subtitle_path.name)
 
 

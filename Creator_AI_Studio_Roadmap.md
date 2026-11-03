@@ -120,4 +120,6 @@ Agents
 2. [x] Add persistent login rate limiting (10 attempts per username per 15 minutes; successful login resets the counter).
 3. [x] Add account lifecycle controls (admin password reset, account disable/reactivate, and session revocation).
 4. [x] Add migration checks for schema drift on existing database installations (`alembic check` after adoption; tested drift reporting).
-5. Update this file after each completed milestone.
+5. [x] Store rendered media in private Azure Blob Storage for multi-replica deployments; retain local disk for development.
+6. Validate Azure deployment end to end, including media permissions, backup/restore, monitoring, and rollback.
+7. Update this file after each completed milestone.

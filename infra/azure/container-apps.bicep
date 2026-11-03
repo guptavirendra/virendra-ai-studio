@@ -27,6 +27,12 @@ param deployApplication bool = false
 @description('External public media URL used by publishing integrations, when configured.')
 param publicMediaBaseUrl string = ''
 
+@description('HTTPS Blob service endpoint for an existing storage account.')
+param azureStorageAccountUrl string
+
+@description('Name of an existing private Blob container for rendered media.')
+param azureStorageContainer string = 'studio-media'
+
 @description('Optional non-secret publishing integration configuration.')
 param instagramUserId string = ''
 param instagramGraphApiVersion string = 'v22.0'
@@ -102,6 +108,8 @@ var backendEnvironment = concat(
     { name: 'PUBLIC_MEDIA_BASE_URL', value: publicMediaBaseUrl }
     { name: 'YOUTUBE_CATEGORY_ID', value: youtubeCategoryId }
     { name: 'YOUTUBE_PRIVACY_STATUS', value: youtubePrivacyStatus }
+    { name: 'AZURE_STORAGE_ACCOUNT_URL', value: azureStorageAccountUrl }
+    { name: 'AZURE_STORAGE_CONTAINER', value: azureStorageContainer }
   ],
   empty(openAiApiKey) ? [] : [{ name: 'OPENAI_API_KEY', secretRef: 'openai-api-key' }],
   empty(instagramAccessToken) ? [] : [{ name: 'INSTAGRAM_ACCESS_TOKEN', secretRef: 'instagram-access-token' }],
