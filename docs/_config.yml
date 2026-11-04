@@ -1,0 +1,12 @@
+exclude:
+  - README.md
+  - CHATGPT_HANDOFF.md
+  - PROJECT_STATUS.md
+  - agent-workflow.md
+  - api-spec.md
+  - automation-scheduler.md
+  - azure-container-apps.md
+  - government-alert-automation.md
+  - implementation-roadmap.md
+  - system-architecture.md
+  - vision-and-product-overview.md

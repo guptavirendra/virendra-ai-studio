@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-labelledby="title">
+  <title id="title">Virendra AI Studio mark</title>
+  <defs>
+    <linearGradient id="a" x1="7" x2="41" y1="5" y2="43" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8ec0ff"/>
+      <stop offset="1" stop-color="#5a89e8"/>
+    </linearGradient>
+    <linearGradient id="b" x1="14" x2="34" y1="11" y2="37" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#091725"/>
+      <stop offset="1" stop-color="#102c48"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="46" height="46" rx="12" fill="url(#b)" stroke="#517caf" stroke-opacity=".5"/>
+  <path d="M12 14h6.1l6.3 16.4L30.7 14H37L27 36h-5.3L12 14Z" fill="url(#a)"/>
+  <circle cx="36.5" cy="11.5" r="2.5" fill="#66e4dc"/>
+</svg>
