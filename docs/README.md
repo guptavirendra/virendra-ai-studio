@@ -20,9 +20,19 @@ site, so they are not published as website pages.
 
 ## Documents
 
+- [Project Status](./PROJECT_STATUS.md)
+- [ChatGPT Handoff](./CHATGPT_HANDOFF.md)
+- [Development Strategy](./DEVELOPMENT_STRATEGY.md)
+- [Master Roadmap](./ROADMAP.md)
+- [Architecture](./ARCHITECTURE.md)
+- [Architecture and Product Decisions](./DECISIONS.md)
+
 - [Public website](./index.html)
 - [Privacy Policy](./privacy.html)
 - [YouTube API Disclosure](./youtube-api-disclosure.html)
+- [Terms of Use](./terms.html)
+- [Backup retention runbook](./backup-retention.md)
+- [Automation and scheduler](./automation-scheduler.md)
 - [Contact](./contact.html)
 - [Product Overview](./vision-and-product-overview.md)
 - [Agent Workflow](./agent-workflow.md)

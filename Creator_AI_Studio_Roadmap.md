@@ -4,7 +4,7 @@
 
 Build an AI-powered content operating system for YouTube and Instagram.
 
-## Status snapshot (updated 2026-11-03)
+## Status snapshot (reviewed 2026-11-07)
 
 This file is now the working project plan for the repository. It should be updated whenever a milestone is completed so the next session can resume from the latest state.
 
@@ -29,7 +29,8 @@ This file is now the working project plan for the repository. It should be updat
 - [x] Telegram bot video publishing is wired through the Bot API and uses approved rendered videos.
 - [x] Video factory scaffold added for voiceover planning, SRT subtitle generation, and render metadata.
 - [x] AI image generation prompt pipeline is now in place.
-- [x] Analytics and AI suggestions are now in place.
+- [x] Analytics data/model groundwork and basic suggestion capabilities are reported in the project status.
+- [ ] Complete CTR, watch-time, RPM reporting and a validated self-learning feedback loop.
 - [x] Dashboard content list, summary, and creation flow are live for local use.
 - [x] Local DB startup now falls back to SQLite when no DATABASE_URL is configured.
 - [x] Local full-stack Docker workflow now includes the frontend dashboard and backend API.
@@ -75,7 +76,7 @@ This file is now the working project plan for the repository. It should be updat
 - [x] AI Voice planning scaffold
 - [x] AI Images
 - [x] Subtitle Generator
-- [x] MP4 Output
+- [ ] End-to-end MP4 output validation with a real content draft
 
 ### Phase 3 -- Publishing
 
